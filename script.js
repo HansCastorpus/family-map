@@ -7,8 +7,8 @@ const svg = document.getElementById('map');
 // ---------------------
 // Constants
 // ---------------------
-const VIEWBOX_WIDTH = 2692.03;
-const VIEWBOX_HEIGHT = 1254.15;
+const VIEWBOX_WIDTH = 2976.18;  // Changed from 2692.03
+const VIEWBOX_HEIGHT = 1503.34; // Changed from 1254.15
 const MIN_WIDTH = 500;           // max zoom in
 const MAX_WIDTH = VIEWBOX_WIDTH; // max zoom out
 const ZOOM_FACTOR = 1.2;
@@ -28,7 +28,6 @@ function updateViewBox() {
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
-
 // ---------------------
 // Pan
 // ---------------------
@@ -48,8 +47,16 @@ svg.addEventListener('pointermove', e => {
   const dx = (e.clientX - start.x) * (viewBox.w / svg.clientWidth);
   const dy = (e.clientY - start.y) * (viewBox.h / svg.clientHeight);
 
-  viewBox.x = clamp(viewBox.x - dx, 0, VIEWBOX_WIDTH - viewBox.w);
-  viewBox.y = clamp(viewBox.y - dy, 0, VIEWBOX_HEIGHT - viewBox.h);
+  const newX = viewBox.x - dx;
+  const newY = viewBox.y - dy;
+
+  // Only allow panning if there's content beyond the viewport
+  // Clamp between 0 and the maximum possible offset
+  const maxX = Math.max(0, VIEWBOX_WIDTH - viewBox.w);
+  const maxY = Math.max(0, VIEWBOX_HEIGHT - viewBox.h);
+
+  viewBox.x = clamp(newX, 0, maxX);
+  viewBox.y = clamp(newY, 0, maxY);
 
   start.x = e.clientX;
   start.y = e.clientY;
@@ -57,13 +64,15 @@ svg.addEventListener('pointermove', e => {
 });
 
 svg.addEventListener('pointerup', stopDrag);
-svg.addEventListener('pointerleave', stopDrag);
+svg.addEventListener('pointercancel', stopDrag);
 
-function stopDrag() {
+function stopDrag(e) {
+  if (isDragging && e.pointerId) {
+    svg.releasePointerCapture(e.pointerId);
+  }
   isDragging = false;
   svg.classList.remove('dragging');
 }
-
 // ---------------------
 // Zoom (wheel)
 svg.addEventListener('wheel', e => {
@@ -115,7 +124,7 @@ function initViewBox() {
   const newH = VIEWBOX_HEIGHT / INITIAL_ZOOM;
 
   viewBox = {
-    x: 600,  // top-left
+    x: 500,  // top-left
     y: 120,  // top-left
     w: newW,
     h: newH
